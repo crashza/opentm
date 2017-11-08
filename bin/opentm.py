@@ -16,13 +16,48 @@ from config import *
 ################################### Defs ###########################################
 
 def add_vendor():
-    vendor      = raw_input("enter vendor name:")
-    description = raw_input("enter vednor desription:")
-    cnx             = connect_db()
-    cursor          = cnx.cursor()
-    query = 'INSERT into vendors (name,description) VALUES(\'%s\',\'%s\')' % (vendor,description)
+    vendor      = raw_input("enter vendor name :")
+    description = raw_input("enter vednor desription :")
+    cnx         = connect_db()
+    cursor      = cnx.cursor()
+    query       = 'INSERT into vendors (name,description) VALUES(\'%s\',\'%s\')' % (vendor,description)
     cursor.execute(query)
     cnx.commit()
+    print "done"
+
+def add_product():
+    # TODO Lots of error checking here
+    charge_types = {}
+    groups       = {}
+    cnx          = connect_db()
+    cursor       = cnx.cursor()
+    query        = 'SELECT i_charge_type, description from charge_types'
+
+    cursor.execute(query)
+    for row in cursor:
+        charge_types[row[0]] = row[1]
+
+    query        = 'SELECT i_group, name from groups'
+    cursor.execute(query)
+    for row in cursor:
+        groups[row[0]] = row[1]
+    
+    product     = raw_input("enter product name :")
+    description = raw_input("enter product desription :")
+    query       = 'INSERT into products (name,description) VALUES(\'%s\',\'%s\')' % (product,description)
+    cursor.execute(query)
+    cnx.commit()
+    for group in groups:
+        ct  = raw_input("choose a charge type for %s :" %groups[group])
+        val = raw_input("choose a value for %s :" %groups[group])
+        query = '''INSERT INTO product_defs 
+                   (i_product,i_group,value,charge_type) 
+                   SELECT p.i_product,g.i_group,'%s','%s' 
+                   from products p, groups g 
+                   where p.name = '%s' and g.name = '%s'
+                '''
+        cursor.execute(query % (val, ct, product,groups[group]))
+        cnx.commit()
     print "done"
 
 
