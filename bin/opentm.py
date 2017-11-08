@@ -15,7 +15,20 @@ from config import *
 
 ################################### Defs ###########################################
 
+def add_vendor():
+    vendor      = raw_input("enter vendor name:")
+    description = raw_input("enter vednor desription:")
+    cnx             = connect_db()
+    cursor          = cnx.cursor()
+    query = 'INSERT into vendors (name,description) VALUES(\'%s\',\'%s\')' % (vendor,description)
+    cursor.execute(query)
+    cnx.commit()
+    print "done"
+
+
+
 def upload_vendor_rates(file,vendor):
+    # TODO compare existing to upload and delete if full rate is selcted
     accept_count = 0
     ignore_count = 0
     vendor_rates = {}
@@ -110,14 +123,24 @@ CONST_VERSION = '0.1'
 parser = argparse.ArgumentParser(description='OpenTM script');
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-d', '--destination', action='store_true', help='command to run')
-group.add_argument('-v', '--vendor', type=str, help='command to run')
-group.add_argument('-r', '--rates', type=str, help='command to run')
+group.add_argument('-v', '--vendor', type=str, help='upload vendor rates')
+group.add_argument('-r', '--rates', type=str, help='generate rates')
+group.add_argument('-a', '--add', type=str,choices=['vendor','product'], help='add product or vendors')
 parser.add_argument('-f', '--file', type=str, help='file to process only usefull with -c destinations/vendors')
 args = parser.parse_args()
+
+
+
+############################ Main Code Here #######################################
 
 if args.destination:
     upload_destinations(args.file)
 elif args.vendor:
     upload_vendor_rates(args.file,args.vendor)
+elif args.add:
+    if args.add == 'vendor':
+        add_vendor()
+    elif args.add == 'product':
+        add_product()
 
-
+#fin.
