@@ -1,2 +1,2 @@
-# opentm
+# OpenTm
 Telco Tariff Management
