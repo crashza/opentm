@@ -29,7 +29,7 @@ def upload_vendor_rates(file,vendor):
                 ignore_count = ignore_count + 1
     dbupdates = insert_vendor_rates(vendor_rates,vendor)
     print "summary:"
-    print "%s commands accepted from csv %s ignored, %s db records updated/added" %(accept_count,ignore_count,dbupdates)
+    print "\t%s commands accepted from csv\n\t%s commands ignored from csv\n\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
 
 
 def insert_vendor_rates(vendor_rates,vendor):
@@ -75,7 +75,7 @@ def upload_destinations(file):
                 ignore_count = ignore_count + 1
     dbupdates = insert_destinations(destinations)
     print "summary:"
-    print "%s commands accepted from csv %s ignored, %s db records updated/added" %(accept_count,ignore_count,dbupdates)
+    print "\t%s commands accepted from csv\n\t%s commands ignored from csv\n\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
     return destinations
 
 
