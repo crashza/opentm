@@ -15,6 +15,52 @@ from config import *
 
 ################################### Defs ###########################################
 
+def upload_vendor_rates(file,vendor):
+    accept_count = 0
+    ignore_count = 0
+    vendor_rates = {}
+    with open(file, 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in reader:
+            if row[0] == "A":
+                accept_count = accept_count + 1
+                vendor_rates[row[1]] = row[2]
+            else:
+                ignore_count = ignore_count + 1
+    dbupdates = insert_vendor_rates(vendor_rates,vendor)
+    print "summary:"
+    print "%s commands accepted from csv %s ignored, %s db records updated/added" %(accept_count,ignore_count,dbupdates)
+
+
+def insert_vendor_rates(vendor_rates,vendor):
+    rows_updated    = 0
+    cnx             = connect_db()
+    cursor          = cnx.cursor()
+    pbar            = progressbar.ProgressBar()
+
+    query = 'SELECT i_vendor from vendors where name=\'%s\'' % vendor
+    cursor.execute(query)
+    i_vendor = 'none'
+    for i_vendor in cursor:
+        i_vendor =  i_vendor[0]
+    if  cursor.rowcount != 1:
+        print "unkown vendor %s" % vendor
+        exit()
+    print "importing vendor rates standby.."
+    for prefix in pbar(vendor_rates):
+        query = '''INSERT into vendor_rates 
+                   (i_destination,i_vendor,price,status) 
+                   SELECT d.i_destination, '%s', '%s' ,'O' from destinations d 
+                   where prefix = '%s' ON DUPLICATE KEY UPDATE 
+                   price=%s, status='O';
+                '''
+        cursor.execute(query % (i_vendor, vendor_rates[prefix], prefix,vendor_rates[prefix]))
+        cnx.commit()
+        rows_updated = rows_updated + cursor.rowcount
+    return rows_updated
+        
+
+
 def upload_destinations(file):
     accept_count = 0
     ignore_count = 0
@@ -64,12 +110,14 @@ CONST_VERSION = '0.1'
 parser = argparse.ArgumentParser(description='OpenTM script');
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('-d', '--destination', action='store_true', help='command to run')
-group.add_argument('-v', '--vendor', action='store_true', help='command to run')
+group.add_argument('-v', '--vendor', type=str, help='command to run')
 group.add_argument('-r', '--rates', type=str, help='command to run')
 parser.add_argument('-f', '--file', type=str, help='file to process only usefull with -c destinations/vendors')
 args = parser.parse_args()
 
 if args.destination:
     upload_destinations(args.file)
+elif args.vendor:
+    upload_vendor_rates(args.file,args.vendor)
 
 
