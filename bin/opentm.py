@@ -51,6 +51,7 @@ def get_rates_as_array(rows):
                 INNER JOIN vendor_rates v
                     ON d.i_destination = v.i_destination
                 WHERE v.i_vendor = '%s' and d.i_group = %s
+                and v.status = 'O'
             '''
     cursor.execute(query %(i_vendor,i_group))
     for row in cursor:
@@ -114,11 +115,30 @@ def add_product():
         cnx.commit()
     print "done"
 
+def get_current_vendor_rates(vendor):
+    cnx          = connect_db()
+    cursor       = cnx.cursor()
+    vendor_rates = {}
+    
+    query = ''' SELECT d.prefix,vr.price FROM vendor_rates vr
+                INNER JOIN vendors v 
+                    ON vr.i_vendor = v.i_vendor
+                INNER JOIN destinations d
+                    ON d.i_destination = vr.i_destination
+                where v.name = '%s'
+            '''
+    cursor.execute(query % vendor)
+    for row in cursor:
+        vendor_rates[row[0]] = row[1]
+    return vendor_rates
+
+
 
 def upload_vendor_rates(file,vendor):
     # TODO compare existing to upload and delete if full rate is selcted
     accept_count = 0
     ignore_count = 0
+    discon_retes = 0
     vendor_rates = {}
     with open(file, 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -128,11 +148,49 @@ def upload_vendor_rates(file,vendor):
                 vendor_rates[row[1]] = row[2]
             else:
                 ignore_count = ignore_count + 1
+    if args.terminate:
+        existing_rates = get_current_vendor_rates(vendor);
+        terminate_rates = dict_compare_rates(existing_rates,vendor_rates)
+        discon_retes = len(terminate_rates)
+        dicontinue_vendor_rates(terminate_rates,vendor)
     dbupdates = insert_vendor_rates(vendor_rates,vendor)
     print "summary:"
     print "\t%s commands accepted from csv" % accept_count
     print "\t%s commands ignored from csv" % ignore_count
     print "\t%s db records updated/added" % dbupdates
+    print "\t%s rates discontinued" % discon_retes
+
+def dicontinue_vendor_rates(prefixes,vendor):
+    cnx                 = connect_db()
+    cursor              = cnx.cursor()
+    for prefix in prefixes:
+        query = ''' SELECT  d.i_destination, v.i_vendor
+                FROM destinations d
+                INNER JOIN vendor_rates vr
+                    ON d.i_destination=vr.i_destination
+                INNER JOIN vendors v
+                    ON vr.i_vendor=v.i_vendor
+                WHERE d.prefix = '%s' and v.name = '%s'
+                '''
+        cursor.execute(query %(prefix,vendor))
+        for row in cursor:
+            i_destination,i_vendor = row
+        query = ''' UPDATE vendor_rates SET status=\'C\' 
+                    WHERE i_vendor = '%s'
+                    AND i_destination = '%s'
+                '''
+        cursor.execute(query %(i_vendor,i_destination))
+        cnx.commit()
+
+
+def dict_compare_rates(existing_rates,vendor_rates):
+    cnx                 = connect_db()
+    cursor              = cnx.cursor()
+    missing_prefixes    = []
+    for prefix in existing_rates.keys():
+        if not prefix in vendor_rates:
+            missing_prefixes.append(prefix)
+    return missing_prefixes
 
 
 def insert_vendor_rates(vendor_rates,vendor):
@@ -215,12 +273,13 @@ CONST_VERSION = '0.1'
 
 parser = argparse.ArgumentParser(description='OpenTM script');
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('-d', '--destination', action='store_true', help='command to run')
-group.add_argument('-v', '--vendor', type=str, help='upload vendor rates')
-group.add_argument('-r', '--rates', type=str, help='generate rates')
+group.add_argument('-d', '--destination', action='store_true', help='upload destinations from file')
+group.add_argument('-v', '--vendor', type=str, help='upload vendor rates from file')
+group.add_argument('-r', '--rates', type=str, help='generate rates for product')
 group.add_argument('-a', '--add', type=str,choices=['vendor','product'], help='add product or vendors')
 parser.add_argument('-f', '--file', type=str, help='file to process only usefull with -d -v')
-parser.add_argument('-o', '--output', type=str, help='output file only usefell with -r')
+parser.add_argument('-o', '--output', type=str, help='output file only usefull with -r')
+parser.add_argument('-t', '--terminate', action='store_true', help='used with -v when a full rate is being uploaded and old rates should be terminated')
 args = parser.parse_args()
 
 
