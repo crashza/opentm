@@ -31,11 +31,6 @@ def add_product():
     groups       = {}
     cnx          = connect_db()
     cursor       = cnx.cursor()
-    query        = 'SELECT i_charge_type, description from charge_types'
-
-    cursor.execute(query)
-    for row in cursor:
-        charge_types[row[0]] = row[1]
 
     query        = 'SELECT i_group, name from groups'
     cursor.execute(query)
@@ -50,16 +45,17 @@ def add_product():
     for group in groups:
         ct  = raw_input("choose a charge type for %s :" %groups[group])
         val = raw_input("choose a value for %s :" %groups[group])
+        ven = raw_input("choose a vendor for %s :" %groups[group])
         query = '''INSERT INTO product_defs 
-                   (i_product,i_group,value,charge_type) 
-                   SELECT p.i_product,g.i_group,'%s','%s' 
-                   from products p, groups g 
+                   (i_product,i_group,value,charge_type,i_vendor) 
+                   SELECT p.i_product,g.i_group,'%s',c.i_charge_type,v.i_vendor 
+                   from products p, groups g, vendors v, charge_types c
                    where p.name = '%s' and g.name = '%s'
+                   and v.name = '%s' and c.name = '%s'
                 '''
-        cursor.execute(query % (val, ct, product,groups[group]))
+        cursor.execute(query % (val, product,groups[group], ven, ct))
         cnx.commit()
     print "done"
-
 
 
 def upload_vendor_rates(file,vendor):
@@ -77,7 +73,9 @@ def upload_vendor_rates(file,vendor):
                 ignore_count = ignore_count + 1
     dbupdates = insert_vendor_rates(vendor_rates,vendor)
     print "summary:"
-    print "\t%s commands accepted from csv\n\t%s commands ignored from csv\n\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
+    print "\t%s commands accepted from csv"
+    print "\t%s commands ignored from csv"
+    print "\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
 
 
 def insert_vendor_rates(vendor_rates,vendor):
@@ -108,7 +106,6 @@ def insert_vendor_rates(vendor_rates,vendor):
     return rows_updated
         
 
-
 def upload_destinations(file):
     accept_count = 0
     ignore_count = 0
@@ -123,7 +120,10 @@ def upload_destinations(file):
                 ignore_count = ignore_count + 1
     dbupdates = insert_destinations(destinations)
     print "summary:"
-    print "\t%s commands accepted from csv\n\t%s commands ignored from csv\n\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
+    print "\t%s commands accepted from csv"
+    print "\t%s commands ignored from csv"
+    print "\t%s db records updated/added" %(accept_count,ignore_count,dbupdates)
+
     return destinations
 
 
@@ -142,6 +142,7 @@ def insert_destinations(destinations):
         cnx.commit()
         rows_updated = rows_updated + cursor.rowcount
     return rows_updated
+
 
 def connect_db():
     cnx =  mysql.connector.connect(host=CFG_DB_HOST, user=CFG_DB_USER, password=CFG_DB_PASS, database=CFG_DB_DATABASE)
