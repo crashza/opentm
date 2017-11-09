@@ -44,7 +44,7 @@ def get_rates_as_array(rows):
     cnx         = connect_db()
     cursor      = cnx.cursor()
 
-    query = ''' SELECT d.prefix,g.name,v.price
+    query = ''' SELECT d.prefix,g.name,v.price,v.last_updated
                 FROM destinations d
                 INNER JOIN groups g
                     ON d.i_group = g.i_group
@@ -55,9 +55,9 @@ def get_rates_as_array(rows):
             '''
     cursor.execute(query %(i_vendor,i_group))
     for row in cursor:
-        prefix,group,cost = row
+        prefix,group,cost,last_updated = row
         rate = calculate_rate(charge_type,value,cost)
-        rates_array.append([prefix,group,cost,rate])
+        rates_array.append([prefix,group,cost,rate,last_updated])
     return rates_array
 
 def calculate_rate(charge_type,value,cost):
