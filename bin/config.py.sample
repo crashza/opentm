@@ -1,1 +1,8 @@
 # Sample Config file
+#
+# Database
+CFG_DB_HOST     = '127.0.0.1'
+CFG_DB_USER     = 'root'
+CFG_DB_PASS     = 'password'
+CFG_DB_DATABASE = 'OpenTM'
+
