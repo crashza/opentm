@@ -71,16 +71,6 @@ def calculate_rate(charge_type,value,cost):
         calculated_rate = 100
     return calculated_rate
 
-def get_rate(rate,charge_type):
-    if charge_type == 1:
-        print "This will be a flat rate"
-    elif charge_type == 2:
-        print "This will be a cost + rate"
-    elif charge_type == 3:
-        print "This will be a cost + perc"
-    elif charge_type == 4:
-         print "This will be a Formuala"
-
 
 def add_vendor():
     vendor      = raw_input("enter vendor name :")
