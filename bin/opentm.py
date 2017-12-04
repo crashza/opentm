@@ -209,15 +209,22 @@ def insert_vendor_rates(vendor_rates,vendor):
         exit()
     print "importing vendor rates standby.."
     for prefix in pbar(vendor_rates):
-        query = '''INSERT into vendor_rates 
-                   (i_destination,i_vendor,price,status) 
-                   SELECT d.i_destination, '%s', '%s' ,'O' from destinations d 
-                   where prefix = '%s' ON DUPLICATE KEY UPDATE 
-                   price=%s, status='O';
-                '''
-        cursor.execute(query % (i_vendor, vendor_rates[prefix], prefix,vendor_rates[prefix]))
-        cnx.commit()
-        rows_updated = rows_updated + cursor.rowcount
+        query = 'SELECT i_destination from destinations where prefix=\'%s\'' % prefix
+        cursor.execute(query)
+        for i_dest in cursor:
+            i_destination = i_dest[0]
+        if cursor.rowcount != 1:
+            print "No destinations found for prefix %s" % prefix
+        else:
+            query = '''INSERT into vendor_rates 
+                       (i_destination,i_vendor,price,status) 
+                       SELECT d.i_destination, '%s', '%s' ,'O' from destinations d 
+                       where prefix = '%s' ON DUPLICATE KEY UPDATE 
+                       price=%s, status='O';
+                    '''
+            cursor.execute(query % (i_vendor, vendor_rates[prefix], prefix,vendor_rates[prefix]))
+            cnx.commit()
+            rows_updated = rows_updated + cursor.rowcount
     return rows_updated
         
 
