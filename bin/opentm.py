@@ -125,7 +125,7 @@ def get_current_vendor_rates(vendor):
                     ON vr.i_vendor = v.i_vendor
                 INNER JOIN destinations d
                     ON d.i_destination = vr.i_destination
-                where v.name = '%s'
+                where v.name = '%s' and vr.status = 'O'
             '''
     cursor.execute(query % vendor)
     for row in cursor:
@@ -224,7 +224,8 @@ def insert_vendor_rates(vendor_rates,vendor):
                     '''
             cursor.execute(query % (i_vendor, vendor_rates[prefix], prefix,vendor_rates[prefix]))
             cnx.commit()
-            rows_updated = rows_updated + cursor.rowcount
+            if cursor.rowcount == 2:
+                rows_updated = rows_updated + 1
     return rows_updated
         
 
