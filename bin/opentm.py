@@ -2,12 +2,13 @@
 
 #
 # OpenTM script to create rates from OpenTM DB
-#
-# Author Trevor Steyn <trevor@webon.co.za>
+# 
+# Author Trevor Steyn  <trevor@webon.co.za>
 #
 
 import csv
 import time
+from decimal import *
 import argparse
 import progressbar
 import mysql.connector
@@ -65,9 +66,9 @@ def calculate_rate(charge_type,value,cost):
     if charge_type == 1:
         calculated_rate = value
     elif charge_type == 2:
-        calculated_rate = float(value) + float(cost)
+        calculated_rate = Decimal(value) + Decimal(cost)
     elif charge_type == 3:
-        calculated_rate = float(cost) * (float(1) + float(value))
+        calculated_rate = Decimal(cost) * (Decimal(1) + Decimal(value))
     elif charge_type == 4:
         calculated_rate = 100
     return calculated_rate
@@ -226,6 +227,8 @@ def insert_vendor_rates(vendor_rates,vendor):
             cnx.commit()
             if cursor.rowcount == 2:
                 rows_updated = rows_updated + 1
+            elif cursor.rowcount == 1:
+                rows_updated = rows_updated + cursor.rowcount
     return rows_updated
         
 
