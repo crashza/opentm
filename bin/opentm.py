@@ -76,7 +76,7 @@ def calculate_rate(charge_type,value,cost):
 
 def add_vendor():
     vendor      = raw_input("enter vendor name :")
-    description = raw_input("enter vednor desription :")
+    description = raw_input("enter vendor desription :")
     cnx         = connect_db()
     cursor      = cnx.cursor()
     query       = 'INSERT into vendors (name,description) VALUES(\'%s\',\'%s\')' % (vendor,description)
